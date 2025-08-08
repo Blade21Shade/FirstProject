@@ -3,6 +3,7 @@
 #include <iostream>
 
 void framebufferSizeCallback(GLFWwindow* window, int width, int height);
+void processInput(GLFWwindow* window);
 
 // This initialization stuff is all one time things so I'll probably leave it here for now, but for other hints I may move them into other functions
 int main() {
@@ -73,20 +74,20 @@ int main() {
      while (!glfwWindowShouldClose(window)) { // This is called the Render Loop, it will go until we tell glfw to stop the loop
                // The above function checks if the given window has been told to close; if not continue the loop, if so stop it
           
-          // This swaps the pixel buffer for the given window
-          glfwSwapBuffers(window); 
-               /*
-               * Swaps the color buffer which is a large 2D buffer which contains color data for all pixels in the window
-               * The now selected buffer is used as output for this frame
-               */
-          /* Double buffer stuff
-          OpenGL uses a double buffer; a "front" buffer which contains what the user sees and a "back" buffer which is actually drawn to
-               Most windowing applications use this
-          This is done because drawing can't be done instantly, every pixel has to be drawn
-          If a single buffer is used, artifacts start appearing
-          So the front buffer is only ever a finished product, while commands are rendered (drawn) to the back buffer
-               Once all commands have finished rendering to the back buffer, the 2 swap places
+          // Every frame, check what input needs to be processeds
+          processInput(window);
+
+          // Rendering commands
+          /*
+          * There is some rendering we may want to do every frame so the current buffer has a base level
+          * We can do other rendering here as well, but it will be dependent on the state
           */
+          // You always want to clear the screen
+          glClearColor(0.2f, 0.3f, 0.3f, 1.0f); // This sets the color we want to clear the screen to whenever glClear is called with the color buffer bit
+               // RGB, A
+          glClear(GL_COLOR_BUFFER_BIT); // Since we give glCLear the buffer bit, this will clear the screen's color AND replace it with the set clearColor
+               // glClearColor is a state-setting function
+               // glClear is a state-using function
 
           // This does a few things
           glfwPollEvents();
@@ -95,6 +96,21 @@ int main() {
                * Updates the window state
                * Calls corresponding functions, which are registered via callback methods
                */
+
+          // This swaps the pixel buffer for the given window
+          glfwSwapBuffers(window);
+          /*
+          * Swaps the color buffer which is a large 2D buffer which contains color data for all pixels in the window
+          * The now selected buffer is used as output for this frame
+          */
+          /* Double buffer stuff
+          OpenGL uses a double buffer; a "front" buffer which contains what the user sees and a "back" buffer which is actually drawn to
+               Most windowing applications use this
+          This is done because drawing can't be done instantly, every pixel has to be drawn
+          If a single buffer is used, artifacts start appearing
+          So the front buffer is only ever a finished product, while commands are rendered (drawn) to the back buffer
+               Once all commands have finished rendering to the back buffer, the 2 swap places
+          */
      }
 
      // Once we're done with the program, we should cleanup GLFW stuff
@@ -106,4 +122,14 @@ int main() {
 // If the user resizes the window it should have it's width and height adjusted accordingly
 void framebufferSizeCallback(GLFWwindow* window, int width, int height) {
      glViewport(0, 0, width, height);
+}
+
+// A general function for handling all input processing
+void processInput(GLFWwindow* window) {
+     // We're going to use the function glfwGetKey() to handle keyboard input for some cases
+      // There are other types of input functions
+     if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS) { // glfwGetKey also wants to know thw window it should be working on
+               // We check if that key has been pressed, if it hasn't the function returns GLFW_RELEASE
+          glfwSetWindowShouldClose(window, true); // This is the setter for the getter function the while loop checks if it should stop the render loop
+     }
 }
