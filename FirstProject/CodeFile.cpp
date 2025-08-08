@@ -63,8 +63,42 @@ int main() {
      */
 
      // This tells the window object to use the function we defined earlier as the callback for when the frame buffer is resized
+     /* Callback function general
+     There are lots of callback functions which can be used
+     They should be set after the window it needs is created, and before the render loop is initiated
+     */
      glfwSetFramebufferSizeCallback(window, framebufferSizeCallback);
 
+     // The actual loop for rendering a window
+     while (!glfwWindowShouldClose(window)) { // This is called the Render Loop, it will go until we tell glfw to stop the loop
+               // The above function checks if the given window has been told to close; if not continue the loop, if so stop it
+          
+          // This swaps the pixel buffer for the given window
+          glfwSwapBuffers(window); 
+               /*
+               * Swaps the color buffer which is a large 2D buffer which contains color data for all pixels in the window
+               * The now selected buffer is used as output for this frame
+               */
+          /* Double buffer stuff
+          OpenGL uses a double buffer; a "front" buffer which contains what the user sees and a "back" buffer which is actually drawn to
+               Most windowing applications use this
+          This is done because drawing can't be done instantly, every pixel has to be drawn
+          If a single buffer is used, artifacts start appearing
+          So the front buffer is only ever a finished product, while commands are rendered (drawn) to the back buffer
+               Once all commands have finished rendering to the back buffer, the 2 swap places
+          */
+
+          // This does a few things
+          glfwPollEvents();
+               /*
+               * Checks if any events have been triggered, such as keyboard input or mouse movement events
+               * Updates the window state
+               * Calls corresponding functions, which are registered via callback methods
+               */
+     }
+
+     // Once we're done with the program, we should cleanup GLFW stuff
+     glfwTerminate();
      return 0;
 }
 
