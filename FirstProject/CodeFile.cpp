@@ -5,14 +5,28 @@
 void framebufferSizeCallback(GLFWwindow* window, int width, int height);
 void processInput(GLFWwindow* window);
 
+const char* vertexShaderSource = "#version 460 core\n"
+"layout (location = 0) in vec3 aPos;\n"
+"void main()\n"
+"{\n"
+"   gl_Position = vec4(aPos.x, aPos.y, aPos.z, 1.0);\n"
+"}\0";
+
+const char* fragmentShaderSource = "#version 460 core\n"
+"out vec4 FragColor;\n"
+"void main() {\n"
+"    FragColor = vec4(1.0f, 0.5f, 0.2f, 1.0f);\n"
+"}\n\0";
+
+
 // This initialization stuff is all one time things so I'll probably leave it here for now, but for other hints I may move them into other functions
 int main() {
      // Initialize GLFW, this makes it so GLFW functions can be used
      glfwInit(); 
 
      // Setup some "hints" for GLFW about openGL
-     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3); // We are using OpenGL 3.x
-     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3); // We are using OpenGL x.3, so in total 3.3
+     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4); // We are using OpenGL 3.x
+     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 6); // We are using OpenGL x.3, so in total 3.3
      glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE); // We are using the Core profile for OpenGL, not the other one
      // glfwWindowHint takes 2 values; the first is an option value from a list of enums, and the second are values for that option, which are usually integers
      // It is used to setup lots of options, not just the general stuff we have setup 
@@ -70,6 +84,75 @@ int main() {
      */
      glfwSetFramebufferSizeCallback(window, framebufferSizeCallback);
 
+     // Shaders
+     int success;
+     char infoLog[512];
+          // Vertex
+     unsigned int vertexShader;
+     vertexShader = glCreateShader(GL_VERTEX_SHADER);
+     glShaderSource(vertexShader, 1, &vertexShaderSource, NULL);
+     glCompileShader(vertexShader);
+     
+     glGetShaderiv(vertexShader, GL_COMPILE_STATUS, &success);
+     if (!success)
+     {
+          glGetShaderInfoLog(vertexShader, 512, NULL, infoLog);
+          std::cout << "ERROR::SHADER::VERTEX::COMPILATION_FAILED\n" << infoLog << std::endl;
+     }
+          // Fragment
+     unsigned int fragmentShader;
+     fragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
+     glShaderSource(fragmentShader, 1, &fragmentShaderSource, NULL);
+     glCompileShader(fragmentShader);
+
+     glGetShaderiv(fragmentShader, GL_COMPILE_STATUS, &success);
+     if (!success)
+     {
+          glGetShaderInfoLog(fragmentShader, 512, NULL, infoLog);
+          std::cout << "ERROR::SHADER::FRAGMENT::COMPILATION_FAILED\n" << infoLog << std::endl;
+     }
+          // Shader program
+     unsigned int shaderProgram = glCreateProgram();
+     glAttachShader(shaderProgram, vertexShader);
+     glAttachShader(shaderProgram, fragmentShader);
+     glLinkProgram(shaderProgram);
+
+     glGetProgramiv(shaderProgram, GL_LINK_STATUS, &success);
+     if (!success) {
+          glGetProgramInfoLog(shaderProgram, 512, NULL, infoLog);
+          std::cout << "ERROR::SHADER::PROGRAM::LINKING_FAILED\n" << infoLog << std::endl;
+     }
+          // Delete shaders
+     glDeleteShader(vertexShader);
+     glDeleteShader(fragmentShader);
+
+
+     // Make triangle data
+     float vertices[] = {
+          -0.5f, -0.5f, 0.0f,
+           0.5f, -0.5f, 0.0f,
+           0.0f,  0.5f, 0.0f
+     };
+
+     // VAO
+     unsigned int VAO;
+     glGenVertexArrays(1, &VAO);
+
+     // VBO
+     unsigned int VBO;
+     glGenBuffers(1, &VBO);
+
+     // Binding
+     glBindVertexArray(VAO);
+     glBindBuffer(GL_ARRAY_BUFFER, VBO);
+     glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
+
+     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
+     glEnableVertexAttribArray(0);
+
+     glBindBuffer(GL_ARRAY_BUFFER, 0); // We can unbind the array buffer because VBO is noted inside VAO, it will bind and unbind as necessary on its own
+     glBindVertexArray(0); // This isn't directly necessary because when you are binding to a VAO, you have to call glBindVertexArray() anyway which will unbind the current ont
+
      // The actual loop for rendering a window
      while (!glfwWindowShouldClose(window)) { // This is called the Render Loop, it will go until we tell glfw to stop the loop
                // The above function checks if the given window has been told to close; if not continue the loop, if so stop it
@@ -88,6 +171,13 @@ int main() {
           glClear(GL_COLOR_BUFFER_BIT); // Since we give glCLear the buffer bit, this will clear the screen's color AND replace it with the set clearColor
                // glClearColor is a state-setting function
                // glClear is a state-using function
+
+          // Draw the triangle
+          glUseProgram(shaderProgram);
+          glBindVertexArray(VAO); // We only have one VAO so we wouldn't have to do this everytime, but its good practice for later
+          glDrawArrays(GL_TRIANGLES, 0, 3);
+
+
 
           // This does a few things
           glfwPollEvents();
@@ -112,6 +202,11 @@ int main() {
                Once all commands have finished rendering to the back buffer, the 2 swap places
           */
      }
+
+     // Best practice to cleanup resources once they are no longer used
+     glDeleteVertexArrays(1, &VAO);
+     glDeleteBuffers(1, &VBO);
+     glDeleteProgram(shaderProgram);
 
      // Once we're done with the program, we should cleanup GLFW stuff
      glfwTerminate();
