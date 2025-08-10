@@ -1,5 +1,6 @@
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
+#include <custom/program.h>
 #include <iostream>
 
 void framebufferSizeCallback(GLFWwindow* window, int width, int height);
@@ -20,25 +21,6 @@ const char* fragmentShaderSource = "#version 460 core\n"
 "void main() {\n"
 "    FragColor = ourColor;\n"
 "}\n\0";
-
-     // Triangle
-const char* triVertexShaderSource = "#version 460 core\n"
-"layout (location = 0) in vec3 aPos;\n"
-"layout (location = 1) in vec3 aColor;\n"
-"out vec3 ourColor;\n"
-"void main()\n"
-"{\n"
-"   gl_Position = vec4(aPos.x, aPos.y, aPos.z, 1.0);\n"
-"   ourColor = aColor;"
-"}\0";
-
-const char* triFragmentShaderSource = "#version 460 core\n"
-"out vec4 FragColor;\n"
-"in vec3 ourColor;\n"
-"void main() {\n"
-"    FragColor = vec4(ourColor, 1.0);\n"
-"}\n\0";
-
 
 // This initialization stuff is all one time things so I'll probably leave it here for now, but for other hints I may move them into other functions
 int main() {
@@ -110,7 +92,7 @@ int main() {
      char infoLog[512];
           // Vertex
      unsigned int vertexShader = glCreateShader(GL_VERTEX_SHADER);
-     glShaderSource(vertexShader, 1, &triVertexShaderSource, NULL);
+     glShaderSource(vertexShader, 1, &vertexShaderSource, NULL);
      glCompileShader(vertexShader);
      
      glGetShaderiv(vertexShader, GL_COMPILE_STATUS, &success);
@@ -121,7 +103,7 @@ int main() {
      }
           // Fragment
      unsigned int fragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
-     glShaderSource(fragmentShader, 1, &triFragmentShaderSource, NULL);
+     glShaderSource(fragmentShader, 1, &fragmentShaderSource, NULL);
      glCompileShader(fragmentShader);
 
      glGetShaderiv(fragmentShader, GL_COMPILE_STATUS, &success);
@@ -144,6 +126,9 @@ int main() {
           // Delete shaders
      glDeleteShader(vertexShader);
      glDeleteShader(fragmentShader);
+
+          // Shaders via the shader class instead of inside this code
+     Program triProgram("vertexShader.txt", "fragmentShader.txt");
 
 
      // Make triangle data
@@ -234,7 +219,9 @@ int main() {
                // glClear is a state-using function
 
           // Draw the triangle
-          glUseProgram(shaderProgram);
+          //glUseProgram(shaderProgram);
+
+          triProgram.use();
 
           /*float timeValue = glfwGetTime();
           float greenValue = sin(timeValue) / 2.0f + 0.5f;
