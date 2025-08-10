@@ -88,8 +88,7 @@ int main() {
      int success;
      char infoLog[512];
           // Vertex
-     unsigned int vertexShader;
-     vertexShader = glCreateShader(GL_VERTEX_SHADER);
+     unsigned int vertexShader = glCreateShader(GL_VERTEX_SHADER);
      glShaderSource(vertexShader, 1, &vertexShaderSource, NULL);
      glCompileShader(vertexShader);
      
@@ -100,8 +99,7 @@ int main() {
           std::cout << "ERROR::SHADER::VERTEX::COMPILATION_FAILED\n" << infoLog << std::endl;
      }
           // Fragment
-     unsigned int fragmentShader;
-     fragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
+     unsigned int fragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
      glShaderSource(fragmentShader, 1, &fragmentShaderSource, NULL);
      glCompileShader(fragmentShader);
 
@@ -129,29 +127,57 @@ int main() {
 
      // Make triangle data
      float vertices[] = {
-          -0.5f, -0.5f, 0.0f,
-           0.5f, -0.5f, 0.0f,
-           0.0f,  0.5f, 0.0f
+          -0.5f, -0.5f, 0.0f, // Bottom left
+           0.5f, -0.5f, 0.0f, // Bottom right
+           0.5f,  0.5f, 0.0f, // Top right
+          -0.5f,  0.5f, 0.0f  // Top left
      };
 
-     // VAO
-     unsigned int VAO;
-     glGenVertexArrays(1, &VAO);
+     unsigned int indices[]{
+          0, 1, 3, // Bottom triangle
+          2, 3, 1, // Top triangle
+     };
 
-     // VBO
-     unsigned int VBO;
+     // Buffer and array objects
+     unsigned int VAO, VBO, EBO; // If you want to create multiple VAOs, VBOs, and/or EBOs do so via arrays
+     // unsigned int VAOs[2], VBOs[2], EBOs[2];
+     /*
+     * With enough, it may even better to create and use these via variables
+     * int objectCount = 3;
+     * unsigned int VAO[objectCount], VBO[objectCount], EBO[objectCount];
+     * 
+     * glGenVertexArrays(3, &VAOs);
+     * glGenBuffers(3, &VBOs);
+     * glGenBuffers(3, &EBOs);
+     * 
+     * int object1 = 0;
+     * int object2 = 1;
+     * int object3 = 2;
+     * 
+     * glBindVertexArray(VAOs[object1]);
+     * etc.
+     */
+     glGenVertexArrays(1, &VAO);
      glGenBuffers(1, &VBO);
+     glGenBuffers(1, &EBO);
 
      // Binding
      glBindVertexArray(VAO);
+
      glBindBuffer(GL_ARRAY_BUFFER, VBO);
      glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
 
+     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
+     glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
+
+     // Vertex Attribute
      glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
      glEnableVertexAttribArray(0);
 
-     glBindBuffer(GL_ARRAY_BUFFER, 0); // We can unbind the array buffer because VBO is noted inside VAO, it will bind and unbind as necessary on its own
+     glBindBuffer(GL_ARRAY_BUFFER, 0); // We can unbind the array buffer because VBO/EBO are noted inside VAO, they will bind and unbind via VAO
      glBindVertexArray(0); // This isn't directly necessary because when you are binding to a VAO, you have to call glBindVertexArray() anyway which will unbind the current ont
+
+     // glPolygonMode(GL_FRONT_AND_BACK, GL_LINE); // Lets you see how shapes are drawn with lines, good for seeing how stuff fits together
 
      // The actual loop for rendering a window
      while (!glfwWindowShouldClose(window)) { // This is called the Render Loop, it will go until we tell glfw to stop the loop
@@ -175,8 +201,9 @@ int main() {
           // Draw the triangle
           glUseProgram(shaderProgram);
           glBindVertexArray(VAO); // We only have one VAO so we wouldn't have to do this everytime, but its good practice for later
-          glDrawArrays(GL_TRIANGLES, 0, 3);
-
+          glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
+          glBindVertexArray(0); // Restting it is good practice, though you can just bind another VAO as well
+          // int count = sizeof(vertices) / sizeof(vertices[0]); Get array size, I'm wondering if this can be done through the VAO instead
 
 
           // This does a few things
