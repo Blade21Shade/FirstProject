@@ -5,6 +5,8 @@
 void framebufferSizeCallback(GLFWwindow* window, int width, int height);
 void processInput(GLFWwindow* window);
 
+// Shader definitions
+     // General/rectangle
 const char* vertexShaderSource = "#version 460 core\n"
 "layout (location = 0) in vec3 aPos;\n"
 "void main()\n"
@@ -17,6 +19,24 @@ const char* fragmentShaderSource = "#version 460 core\n"
 "uniform vec4 ourColor;\n"
 "void main() {\n"
 "    FragColor = ourColor;\n"
+"}\n\0";
+
+     // Triangle
+const char* triVertexShaderSource = "#version 460 core\n"
+"layout (location = 0) in vec3 aPos;\n"
+"layout (location = 1) in vec3 aColor;\n"
+"out vec3 ourColor;\n"
+"void main()\n"
+"{\n"
+"   gl_Position = vec4(aPos.x, aPos.y, aPos.z, 1.0);\n"
+"   ourColor = aColor;"
+"}\0";
+
+const char* triFragmentShaderSource = "#version 460 core\n"
+"out vec4 FragColor;\n"
+"in vec3 ourColor;\n"
+"void main() {\n"
+"    FragColor = vec4(ourColor, 1.0);\n"
 "}\n\0";
 
 
@@ -90,7 +110,7 @@ int main() {
      char infoLog[512];
           // Vertex
      unsigned int vertexShader = glCreateShader(GL_VERTEX_SHADER);
-     glShaderSource(vertexShader, 1, &vertexShaderSource, NULL);
+     glShaderSource(vertexShader, 1, &triVertexShaderSource, NULL);
      glCompileShader(vertexShader);
      
      glGetShaderiv(vertexShader, GL_COMPILE_STATUS, &success);
@@ -101,7 +121,7 @@ int main() {
      }
           // Fragment
      unsigned int fragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
-     glShaderSource(fragmentShader, 1, &fragmentShaderSource, NULL);
+     glShaderSource(fragmentShader, 1, &triFragmentShaderSource, NULL);
      glCompileShader(fragmentShader);
 
      glGetShaderiv(fragmentShader, GL_COMPILE_STATUS, &success);
@@ -134,13 +154,24 @@ int main() {
           -0.5f,  0.5f, 0.0f  // Top left
      };
 
-     unsigned int indices[]{
+     unsigned int indices[] = {
           0, 1, 3, // Bottom triangle
           2, 3, 1, // Top triangle
      };
 
+     float triVertices[] = {
+          // positions        // colors
+          0.5f, -0.5f, 0.0f,  1.0f, 0.0f, 0.0f, // bottom right
+         -0.5f, -0.5f, 0.0f,  0.0f, 1.0f, 0.0f, // bottom left
+          0.0f,  0.5f, 0.0f,  0.0f, 0.0f, 1.0f  // top
+     };
+
+     unsigned int triIndices[] = {
+          1, 0, 2
+     };
+
      // Buffer and array objects
-     unsigned int VAO, VBO, EBO; // If you want to create multiple VAOs, VBOs, and/or EBOs do so via arrays
+     // If you want to create multiple VAOs, VBOs, and/or EBOs do so via arrays
      // unsigned int VAOs[2], VBOs[2], EBOs[2];
      /*
      * With enough, it may even better to create and use these via variables
@@ -151,13 +182,14 @@ int main() {
      * glGenBuffers(3, &VBOs);
      * glGenBuffers(3, &EBOs);
      * 
-     * int object1 = 0;
-     * int object2 = 1;
-     * int object3 = 2;
+     * int object0 = 0;
+     * int object1 = 1;
+     * int object2 = 2;
      * 
      * glBindVertexArray(VAOs[object1]);
      * etc.
      */
+     unsigned int VAO, VBO, EBO;
      glGenVertexArrays(1, &VAO);
      glGenBuffers(1, &VBO);
      glGenBuffers(1, &EBO);
@@ -166,14 +198,16 @@ int main() {
      glBindVertexArray(VAO);
 
      glBindBuffer(GL_ARRAY_BUFFER, VBO);
-     glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
+     glBufferData(GL_ARRAY_BUFFER, sizeof(triVertices), triVertices, GL_STATIC_DRAW);
 
      glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
-     glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
+     glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(triIndices), triIndices, GL_STATIC_DRAW);
 
      // Vertex Attribute
-     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
+     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)0);
      glEnableVertexAttribArray(0);
+     glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)(3 * sizeof(float)));
+     glEnableVertexAttribArray(1);
 
      glBindBuffer(GL_ARRAY_BUFFER, 0); // We can unbind the array buffer because VBO/EBO are noted inside VAO, they will bind and unbind via VAO
      glBindVertexArray(0); // This isn't directly necessary because when you are binding to a VAO, you have to call glBindVertexArray() anyway which will unbind the current ont
@@ -202,15 +236,15 @@ int main() {
           // Draw the triangle
           glUseProgram(shaderProgram);
 
-          float timeValue = glfwGetTime();
+          /*float timeValue = glfwGetTime();
           float greenValue = sin(timeValue) / 2.0f + 0.5f;
           float redValue = 1 - greenValue;
           int vertexColorLocation = glGetUniformLocation(shaderProgram, "ourColor");
-          glUniform4f(vertexColorLocation, redValue, greenValue, 0.0f, 1.0f);
+          glUniform4f(vertexColorLocation, redValue, greenValue, 0.0f, 1.0f);*/
 
 
           glBindVertexArray(VAO); // We only have one VAO so we wouldn't have to do this everytime, but its good practice for later
-          glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
+          glDrawElements(GL_TRIANGLES, 3, GL_UNSIGNED_INT, 0);
           glBindVertexArray(0); // Restting it is good practice, though you can just bind another VAO as well
           // int count = sizeof(vertices) / sizeof(vertices[0]); Get array size, I'm wondering if this can be done through the VAO instead
 
@@ -242,6 +276,7 @@ int main() {
      // Best practice to cleanup resources once they are no longer used
      glDeleteVertexArrays(1, &VAO);
      glDeleteBuffers(1, &VBO);
+     glDeleteBuffers(1, &EBO);
      glDeleteProgram(shaderProgram);
 
      // Once we're done with the program, we should cleanup GLFW stuff
