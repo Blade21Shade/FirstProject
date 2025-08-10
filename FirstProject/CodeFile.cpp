@@ -14,8 +14,9 @@ const char* vertexShaderSource = "#version 460 core\n"
 
 const char* fragmentShaderSource = "#version 460 core\n"
 "out vec4 FragColor;\n"
+"uniform vec4 ourColor;\n"
 "void main() {\n"
-"    FragColor = vec4(1.0f, 0.5f, 0.2f, 1.0f);\n"
+"    FragColor = ourColor;\n"
 "}\n\0";
 
 
@@ -200,6 +201,14 @@ int main() {
 
           // Draw the triangle
           glUseProgram(shaderProgram);
+
+          float timeValue = glfwGetTime();
+          float greenValue = sin(timeValue) / 2.0f + 0.5f;
+          float redValue = 1 - greenValue;
+          int vertexColorLocation = glGetUniformLocation(shaderProgram, "ourColor");
+          glUniform4f(vertexColorLocation, redValue, greenValue, 0.0f, 1.0f);
+
+
           glBindVertexArray(VAO); // We only have one VAO so we wouldn't have to do this everytime, but its good practice for later
           glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
           glBindVertexArray(0); // Restting it is good practice, though you can just bind another VAO as well
